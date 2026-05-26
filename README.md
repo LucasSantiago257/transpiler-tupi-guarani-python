@@ -18,15 +18,14 @@ A3 da disciplina *Teoria da Computação e Compiladores* (Prof. Eduardo Xavier).
 
 - Python ≥ 3.10
 
-Crie um ambiente virtual e instale as dependências:
+Clone esse repositório, crie um ambiente virtual e instale as dependências:
 
 ```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
+git clone https://github.com/LucasSantiago257/transpiler-tupi-guarani-python.git
+python -m venv .venv # No Windows
+.venv\Scripts\activate # No Mac e Linux
 source .venv/bin/activate
-
+cd transpiler-tupi-guarani-python
 pip install -r requirements.txt
 ```
 
