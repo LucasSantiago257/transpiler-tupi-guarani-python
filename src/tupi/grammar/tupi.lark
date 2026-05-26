@@ -1,0 +1,87 @@
+// ============================================================
+// Gramática da linguagem Tupi (fonte) — alvo: Python
+// Sem recursão à esquerda; sem produções vazias.
+// Precedência aritmética via estratificação expr / term / fator.
+// Observação: o apóstrofo ' é típico em Tupi-Guarani (he'i, ñe'ẽ,
+// moñe'ẽ). Para evitar ambiguidade léxica com o identificador,
+// nesta versão não usaremos diagríticos ou sinalização.). 
+// A grafia "autêntica" está documentada em docs/linguagem.md.
+// ============================================================
+
+start: program
+
+program: "tekoha" decls bloco "opa" "."
+
+// ---------- Declarações ----------
+decls: decl*
+decl: tipo id_list "."
+id_list: IDENT ("," IDENT)*
+
+tipo: "papy"    -> tipo_int
+    | "papyvore"     -> tipo_float
+    | "nee"      -> tipo_str
+    | "anetepa"   -> tipo_bool
+
+// ---------- Bloco / comandos ----------
+bloco: cmd+
+
+?cmd: cmd_leitura
+   | cmd_escrita
+   | cmd_atrib
+   | cmd_if
+   | cmd_while
+   | cmd_dowhile
+   | cmd_for
+
+cmd_leitura : "monee" "(" IDENT ")" "."
+cmd_escrita : "hei"   "(" expr ")" "."
+
+cmd_atrib : IDENT _ASSIGN expr "."
+
+cmd_if      : "ojepe" "(" cond ")" "{" bloco "}" ("yro" "{" bloco "}")?
+cmd_while   : "aja"   "(" cond ")" "{" bloco "}"
+cmd_dowhile : "japo"  "{" bloco "}" "aja" "(" cond ")" "."
+cmd_for     : "rupi"  "(" for_init cond "." for_step ")" "{" bloco "}"
+
+for_init : IDENT _ASSIGN expr "."
+for_step : IDENT _ASSIGN expr
+
+// ---------- Condição (relacional) ----------
+cond   : expr op_rel expr
+op_rel : "<"  -> op_lt
+       | ">"  -> op_gt
+       | "<=" -> op_le
+       | ">=" -> op_ge
+       | "!=" -> op_ne
+       | "==" -> op_eq
+
+// ---------- Expressões (sem recursão à esquerda) ----------
+expr   : term (add_op term)*
+add_op : "+" -> op_add
+       | "-" -> op_sub
+
+term   : fator (mul_op fator)*
+mul_op : "*" -> op_mul
+       | "/" -> op_div
+
+fator  : NUMERO_DEC       -> fator_dec
+       | NUMERO_INT       -> fator_int
+       | ESCAPED_STRING   -> fator_str
+       | "anete"          -> fator_true
+       | "japu"           -> fator_false
+       | IDENT            -> fator_id
+       | "(" expr ")"     -> fator_par
+
+// ---------- Tokens ----------
+_ASSIGN     : /=(?!=)/
+NUMERO_DEC : /[0-9]+\.[0-9]+/
+NUMERO_INT : /[0-9]+/
+IDENT      : /[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*/
+
+%import common.ESCAPED_STRING
+%import common.WS
+%ignore WS
+
+COMMENT : "#" /[^\n]*/
+%ignore COMMENT
+
