@@ -101,7 +101,7 @@ class CmdWhile(Cmd):
     bloco: Bloco
 
 @dataclass
-class CmdDoWhile(Cmd):
+class CmdDowhile(Cmd):
     bloco: Bloco
     cond: Cond
 
