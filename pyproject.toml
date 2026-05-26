@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tupi-transpiler"
+version = "0.1.0"
+description = "Transpilador de uma linguagem com vocabulário Tupi-Guarani para Python"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Lucas Carvalho Santiago",
+    "João Manuel da Silva Cunha",
+    "Bruno Sales Fiaes Carneiro",
+    "Bruno de Menezes Sales",
+    "Guilherme Costa dos Santos"}
+]
+license = { text = "MIT" }
+dependencies = [
+    "lark>=1.1.9",
+    "click>=8.1.7",
+]
+
+[project.scripts]
+tupi = "tupi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tupi = ["grammar/*.lark"]
