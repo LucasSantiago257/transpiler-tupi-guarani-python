@@ -44,6 +44,7 @@ python -m tupi.cli compile examples/06_fibonacci.tg -o saida/meu_fibonacci.py
 # Compilar e EXECUTAR o código Python gerado imediatamente
 python -m tupi.cli compile examples/07_tpk.tg --run
 ```
+Você também pode escrever seu próprio programa no formato .tg e utilizar o compilador tupi para transformá-lo em python!
 
 ## Exemplo de Programa Fonte
 
@@ -76,7 +77,7 @@ src/tupi/
   semantic/              Tabela de Símbolos e Verificador Semântico (Checagem de Tipos)
   codegen/               Emissor de String Python nativo
 examples/
-  *.tg                   7 programas escritos em Tupi (incluindo Fibonacci e TPK)
+  *.tg                   7 programas escritos em Tupi
 docs/
   linguagem.md           Especificação completa da linguagem Tupi
 ```
