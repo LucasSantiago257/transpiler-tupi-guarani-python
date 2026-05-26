@@ -1,11 +1,4 @@
-// ============================================================
-// Gramática da linguagem Tupi (fonte) — alvo: Python
-// Precedência aritmética via estratificação expr / term / fator.
-// Observação: o apóstrofo ' é típico em Tupi-Guarani (he'i, ñe'ẽ,
-// moñe'ẽ). Para evitar ambiguidade léxica com o identificador,
-// nesta versão não seram usados diacríticos ou sinalização.). 
-// A grafia "autêntica" está documentada em docs/linguagem.md.
-// ============================================================
+// Uma visão geral melhor da linguagem se encontra no docs/linguagem.md
 
 start: program
 
