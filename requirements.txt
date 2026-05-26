@@ -1,0 +1,3 @@
+# Dependências de produção
+lark>=1.1.9
+click>=8.1.7
