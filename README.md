@@ -22,9 +22,9 @@ Clone esse repositório, crie um ambiente virtual e instale as dependências:
 
 ```bash
 git clone https://github.com/LucasSantiago257/transpiler-tupi-guarani-python.git
-python -m venv .venv # No Windows
-.venv\Scripts\activate # No Mac e Linux
-source .venv/bin/activate
+python -m venv .venv 
+.venv\Scripts\activate # No Windows
+source .venv/bin/activate  # No Mac e Linux
 cd transpiler-tupi-guarani-python
 pip install -r requirements.txt
 ```
