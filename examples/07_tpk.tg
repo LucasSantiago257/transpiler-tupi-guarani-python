@@ -1,0 +1,34 @@
+# Algoritmo de Trabb Pardo-Knuth (TPK) - Versao adaptada para Tupi.
+#   - Le N valores um por vez.
+#   - Aplica f(a) = a * a + 5 * a.
+#   - Compara com o limite 400 e imprime o resultado ou "TOO LARGE".
+
+tekoha
+  papy i, n.
+  papyvore a, resultado, limite.
+
+  limite = 400.0.
+
+  hei("=== Algoritmo de Trabb Pardo-Knuth (adaptado) ===").
+  hei("Quantos valores deseja processar?").
+  monee(n).
+
+  i = 1.
+  aja (i <= n) {
+    hei("Digite o valor:").
+    monee(a).
+
+    resultado = a * a + 5.0 * a.
+
+    hei("f(a) =").
+    ojepe (resultado > limite) {
+      hei("TOO LARGE").
+    } yro {
+      hei(resultado).
+    }
+
+    i = i + 1.
+  }
+
+  hei("=== Fim do algoritmo TPK ===").
+opa.
