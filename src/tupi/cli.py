@@ -62,5 +62,19 @@ def compile(arquivo, output, run):
         sys.exit(result.returncode)
 
 
+@main.command()
+@click.argument("arquivo", type=click.Path(exists=True))
+def tree(arquivo):
+    """Exibe a arvore sintatica (parse tree) de um arquivo .tg."""
+
+    click.echo(f"Arvore sintatica de: {arquivo}\n")
+    try:
+        arvore_lark = parse_file(arquivo)
+        click.echo(arvore_lark.pretty())
+    except Exception as e:
+        click.echo(f"ERRO SINTATICO: {e}", err=True)
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()
