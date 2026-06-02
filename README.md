@@ -42,6 +42,9 @@ python -m tupi.cli compile examples/06_fibonacci.tg -o saida/meu_fibonacci.py
 
 # Compilar e EXECUTAR o código Python gerado imediatamente
 python -m tupi.cli compile examples/07_tpk.tg --run
+
+# Exibir a árvore sintática (parse tree) gerada pelo Lark
+python -m tupi.cli tree examples/01_ola_mundo.tg
 ```
 Você também pode escrever seu próprio programa no formato .tg e utilizar o compilador tupi para transformá-lo em python!
 
