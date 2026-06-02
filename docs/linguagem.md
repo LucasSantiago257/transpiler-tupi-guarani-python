@@ -294,3 +294,28 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+
+---
+
+## 10. Visualização da Árvore Sintática (Parse Tree)
+
+O transpilador também permite visualizar a árvore sintática gerada pelo parser (antes da AST simplificada), mostrando exatamente como a gramática processa o arquivo. Esse formato é útil para entender o funcionamento interno e para visualização clássica de compiladores.
+
+Para ver a árvore de um código, utilize o comando `tree` no CLI:
+
+```bash
+python -m tupi.cli tree examples/01_ola_mundo.tg
+```
+
+Saída gerada:
+```
+start
+  program
+    decls
+    bloco
+      cmd_escrita
+        expr
+          term
+            fator_str  "Mba_eichapa ko yvy!"
+```
+
