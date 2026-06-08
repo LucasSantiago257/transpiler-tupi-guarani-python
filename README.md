@@ -48,6 +48,36 @@ python -m tupi.cli tree examples/01_ola_mundo.tg
 ```
 Você também pode escrever seu próprio programa no formato .tg e utilizar o compilador tupi para transformá-lo em python!
 
+## Visualização Gráfica (Web App)
+
+Além da CLI, há um **visualizador gráfico** (web app em [Streamlit](https://streamlit.io/)) que mostra todas as etapas da transpilação lado a lado — código-fonte, árvore sintática, AST, tabela de símbolos e o Python gerado — e ainda permite **executar** o programa no navegador (com um campo de entrada para os comandos `monee`).
+
+### Modo fácil (recomendado)
+
+No **Windows**, basta dar **dois cliques em `run.bat`** — ele instala as dependências e abre o visualizador no navegador automaticamente. No **macOS/Linux**, rode `./run.sh`.
+
+Ou, dentro do **VSCode**, abra `app.py` e clique no botão **▶ Run** — o próprio `app.py` se relança via Streamlit (não é preciso digitar `streamlit run`).
+
+### Modo manual
+
+```bash
+pip install -r requirements.txt   # ou: pip install -e ".[web]"
+
+# Inicie o visualizador (qualquer uma das opções):
+streamlit run app.py
+python app.py
+python -m tupi.cli web
+```
+
+Na barra lateral você pode carregar um dos exemplos em `examples/` ou enviar o seu próprio arquivo `.tg`. O editor central re-transpila automaticamente a cada alteração.
+
+Nas abas **Árvore Sintática** e **AST** há dois modos de visualização do grafo:
+
+- **Interativo (zoom)** — amplia com a roda do mouse e move arrastando. Requer internet (carrega bibliotecas de uma CDN).
+- **Estático (offline)** — renderização local que **não depende de internet**; use este modo se o grafo aparecer em branco em redes lentas. Amplie com o botão de **tela cheia (⤢)**.
+
+Há também a opção *"Ver em texto (indentado)"*, uma visão textual da árvore que sempre funciona.
+
 ## Exemplo de Programa Fonte
 
 ```
@@ -78,6 +108,8 @@ src/tupi/
   syntatic/              Mapeamento de Árvores de Nós (AST e Transformer)
   semantic/              Tabela de Símbolos e Verificador Semântico (Checagem de Tipos)
   codegen/               Emissor de String Python nativo
+  visualize.py           Geração de DOT (Graphviz) da parse tree e da AST
+app.py                   Visualizador gráfico (web app Streamlit)
 examples/
   *.tg                   7 programas escritos em Tupi
 docs/
