@@ -21,6 +21,9 @@ dependencies = [
     "click>=8.1.7",
 ]
 
+[project.optional-dependencies]
+web = ["streamlit>=1.30"]
+
 [project.scripts]
 tupi = "tupi.cli:main"
 
