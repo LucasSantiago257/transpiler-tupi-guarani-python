@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from pathlib import Path
 import click
 
 from tupi.lexer_parser import parse_file
@@ -73,6 +74,27 @@ def tree(arquivo):
         click.echo(arvore_lark.pretty())
     except Exception as e:
         click.echo(f"ERRO SINTATICO: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+def web():
+    """Abre o visualizador grafico (web app Streamlit)."""
+
+    app_path = Path(__file__).resolve().parents[2] / "app.py"
+    if not app_path.exists():
+        app_path = Path.cwd() / "app.py"
+    if not app_path.exists():
+        click.echo(f"ERRO: app.py nao encontrado em {app_path}", err=True)
+        sys.exit(1)
+
+    try:
+        subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_path)])
+    except FileNotFoundError:
+        click.echo(
+            "ERRO: Streamlit nao instalado. Rode: pip install -e \".[web]\"",
+            err=True,
+        )
         sys.exit(1)
 
 
