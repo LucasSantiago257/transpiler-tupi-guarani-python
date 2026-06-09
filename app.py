@@ -56,7 +56,7 @@ from tupi.syntatic.transformer import transformer
 from tupi.semantic.checker import SemanticChecker
 from tupi.semantic.symbol_table import SemanticError
 from tupi.codegen.emitter import CodeGenerator
-from tupi.visualize import lark_tree_to_dot, ast_to_dot, ast_to_text
+from tupi.visualize import lark_tree_to_svg, ast_to_svg, ast_to_text
 
 RAIZ = Path(__file__).parent
 EXEMPLOS_DIR = RAIZ / "examples"
@@ -147,54 +147,76 @@ def _placeholder() -> None:
     st.info("Etapa não alcançada — corrija os erros das etapas anteriores.")
 
 
-def _grafo_interativo(dot: str, altura: int = 650) -> None:
-    """Grafo interativo (zoom com a roda do mouse, arraste para mover) via
-    d3-graphviz. Requer internet (carrega bibliotecas de uma CDN)."""
-    dot_json = json.dumps(dot)
-    html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  html, body {{ margin: 0; padding: 0; }}
-  #grafo {{ width: 100%; height: {altura}px; overflow: hidden;
-            border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }}
-  #grafo svg {{ width: 100%; height: 100%; }}
-  .dica {{ font-family: Helvetica, Arial, sans-serif; font-size: 12px;
-           color: #666; margin: 2px 4px 6px; }}
-</style>
-<script src="https://unpkg.com/d3@5.16.0/dist/d3.min.js"></script>
-<script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
-<script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
-</head>
-<body>
-<div class="dica">🖱️ Role o mouse para ampliar/reduzir e arraste para mover.</div>
-<div id="grafo"></div>
+def _exibir_grafo(svg: str, altura: int = 620) -> None:
+    """Mostra o grafo (SVG) num visor com zoom e deslocamento, 100% offline.
+
+    O SVG é gerado em Python (ver ``tupi.visualize``); o zoom/arraste é feito
+    aqui por um pequeno script embutido — não depende de internet, do binário
+    do Graphviz nem de bibliotecas externas.
+    """
+    svg_json = json.dumps(svg)
+    html = """
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; padding: 0; font-family: Helvetica, Arial, sans-serif; }
+  #wrap { position: relative; width: 100%; height: __ALT__px;
+          border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; overflow: hidden; }
+  #vp { width: 100%; height: 100%; overflow: hidden; cursor: grab; }
+  #vp.drag { cursor: grabbing; }
+  #vp svg { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  #bar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10; }
+  #bar button { width: 30px; height: 30px; font-size: 16px; line-height: 1;
+                border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  #bar button:hover { background: #f1f3f4; }
+  .hint { position: absolute; bottom: 6px; left: 8px; font-size: 11px; color: #80868b; }
+</style></head><body>
+<div id="wrap">
+  <div id="bar">
+    <button id="zin" title="Ampliar">+</button>
+    <button id="zout" title="Reduzir">&minus;</button>
+    <button id="zfit" title="Ajustar à tela">&#10530;</button>
+  </div>
+  <div id="vp"></div>
+  <div class="hint">Role o mouse para zoom &middot; arraste para mover &middot; &#10530; ajusta</div>
+</div>
 <script>
-  var dot = {dot_json};
-  d3.select("#grafo").graphviz().fit(true).zoom(true).renderDot(dot);
-</script>
-</body>
-</html>
+  var vp = document.getElementById("vp");
+  vp.innerHTML = __SVG__;
+  var svg = vp.querySelector("svg");
+  var W = svg.viewBox.baseVal.width, H = svg.viewBox.baseVal.height;
+  svg.removeAttribute("width"); svg.removeAttribute("height");
+  var k = 1, tx = 0, ty = 0;
+  function apply() { svg.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + k + ")"; }
+  function fit() {
+    var r = vp.getBoundingClientRect();
+    k = Math.min(r.width / W, r.height / H);
+    if (!isFinite(k) || k <= 0) k = 1;
+    if (k > 1) k = 1;                       // não amplia demais grafos pequenos
+    tx = (r.width - W * k) / 2; ty = (r.height - H * k) / 2; apply();
+  }
+  function zoomAt(cx, cy, fator) {
+    var nk = Math.max(0.05, Math.min(20, k * fator));
+    tx = cx - (cx - tx) * (nk / k); ty = cy - (cy - ty) * (nk / k); k = nk; apply();
+  }
+  vp.addEventListener("wheel", function(e) {
+    e.preventDefault();
+    var r = vp.getBoundingClientRect();
+    zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+  }, { passive: false });
+  var drag = false, lx = 0, ly = 0;
+  vp.addEventListener("mousedown", function(e) { drag = true; lx = e.clientX; ly = e.clientY; vp.classList.add("drag"); });
+  window.addEventListener("mousemove", function(e) {
+    if (!drag) return;
+    tx += e.clientX - lx; ty += e.clientY - ly; lx = e.clientX; ly = e.clientY; apply();
+  });
+  window.addEventListener("mouseup", function() { drag = false; vp.classList.remove("drag"); });
+  document.getElementById("zin").onclick = function() { var r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1.25); };
+  document.getElementById("zout").onclick = function() { var r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1 / 1.25); };
+  document.getElementById("zfit").onclick = fit;
+  fit();
+</script></body></html>
 """
-    components.html(html, height=altura + 40, scrolling=False)
-
-
-def _exibir_grafo(dot: str, chave: str) -> None:
-    """Mostra o grafo no modo escolhido: interativo (CDN) ou estático (offline)."""
-    modo = st.radio(
-        "Modo de visualização",
-        ["Interativo (zoom · requer internet)", "Estático (offline)"],
-        horizontal=True,
-        key=chave,
-        help="Use o modo Estático se o grafo aparecer em branco (rede lenta/sem internet).",
-    )
-    if modo.startswith("Interativo"):
-        _grafo_interativo(dot)
-    else:
-        st.caption("Passe o mouse sobre o grafo e use o botão de tela cheia (⤢) para ampliar.")
-        st.graphviz_chart(dot, width="stretch")
+    html = html.replace("__ALT__", str(altura)).replace("__SVG__", svg_json)
+    components.html(html, height=altura + 4, scrolling=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -251,7 +273,7 @@ with aba_src:
 # --- Árvore Sintática (parse tree) ----------------------------------------- #
 with aba_parse:
     if res["parse_tree"] is not None:
-        _exibir_grafo(lark_tree_to_dot(res["parse_tree"]), chave="modo_arvore")
+        _exibir_grafo(lark_tree_to_svg(res["parse_tree"]))
         with st.expander("Ver em texto (indentado)"):
             st.code(res["parse_tree"].pretty(), language="text")
     elif res["erro_etapa"] == "sintatica":
@@ -262,7 +284,7 @@ with aba_parse:
 # --- AST ------------------------------------------------------------------- #
 with aba_ast:
     if res["ast"] is not None:
-        _exibir_grafo(ast_to_dot(res["ast"]), chave="modo_ast")
+        _exibir_grafo(ast_to_svg(res["ast"]))
         with st.expander("Ver em texto (indentado)"):
             st.code(ast_to_text(res["ast"]), language="text")
     elif res["erro_etapa"] == "ast":

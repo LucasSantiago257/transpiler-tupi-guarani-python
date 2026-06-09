@@ -71,10 +71,10 @@ python -m tupi.cli web
 
 Na barra lateral você pode carregar um dos exemplos em `examples/` ou enviar o seu próprio arquivo `.tg`. O editor central re-transpila automaticamente a cada alteração.
 
-Nas abas **Árvore Sintática** e **AST** há dois modos de visualização do grafo:
+Nas abas **Árvore Sintática** e **AST** o grafo é renderizado localmente (**offline**, não depende de internet). Para explorar:
 
-- **Interativo (zoom)** — amplia com a roda do mouse e move arrastando. Requer internet (carrega bibliotecas de uma CDN).
-- **Estático (offline)** — renderização local que **não depende de internet**; use este modo se o grafo aparecer em branco em redes lentas. Amplie com o botão de **tela cheia (⤢)**.
+- **Role a roda do mouse** para ampliar/reduzir e **arraste** para mover o grafo.
+- Use o botão de **tela cheia (⤢)** no canto para uma visão maior.
 
 Há também a opção *"Ver em texto (indentado)"*, uma visão textual da árvore que sempre funciona.
 
