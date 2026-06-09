@@ -107,7 +107,6 @@ def ast_to_dot(node) -> str:
         return meu_id
 
     def visita(no, *, rotulo_aresta: str | None = None) -> str:
-        # Dataclass: nó interno com nome da classe.
         if is_dataclass(no) and not isinstance(no, type):
             meu_id = f"n{next(ids)}"
             linhas.append(
@@ -130,7 +129,6 @@ def ast_to_dot(node) -> str:
                 _aresta(meu_id, filho_id)
             return meu_id
 
-        # Primitivo (str/int/float/bool) → folha colorida.
         return folha(no, cor="#fde8e8")
 
     def _aresta(origem: str, destino: str, rotulo: str | None = None) -> None:
@@ -299,6 +297,7 @@ def _render_svg(raiz: dict) -> str:
 
     coletar(raiz, None)
 
+    # Origem para deslocar tudo para dentro da margem, e dimensões finais do SVG.
     ox = _MARGIN - min_x[0]
     oy = _MARGIN
     largura = (max_x[0] - min_x[0]) + 2 * _MARGIN
@@ -329,7 +328,6 @@ def _render_svg(raiz: dict) -> str:
                 f'text-anchor="middle">{rotulo}</text>'
             )
 
-    # Nós.
     for no in nos:
         cx = no["x"] + ox
         top = no["y"] + oy

@@ -228,7 +228,6 @@ st.caption("Visualização gráfica das etapas da compilação: análise sintát
 
 exemplos = _listar_exemplos()
 
-# Conteúdo inicial do editor: primeiro exemplo disponível.
 if "fonte" not in st.session_state:
     st.session_state.fonte = (
         (EXEMPLOS_DIR / exemplos[0]).read_text(encoding="utf-8") if exemplos else ""
@@ -353,9 +352,8 @@ with aba_py:
                     if proc.stdout:
                         st.markdown("**Saída:**")
                         st.code(proc.stdout, language="text")
+                    # EOFError = o programa pediu mais entradas do que foram fornecidas.
                     if proc.returncode != 0 and "EOFError" in (proc.stderr or ""):
-                        # input() ficou sem dados: o programa pediu mais entradas
-                        # do que foram fornecidas na caixa acima.
                         st.warning(
                             "⚠️ O programa pediu **mais entradas do que você forneceu**. "
                             "Adicione mais valores na caixa **Entrada (stdin)** acima "
