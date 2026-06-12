@@ -51,6 +51,8 @@ if not _sob_streamlit():
     )
 
 
+from lark.exceptions import UnexpectedCharacters, UnexpectedToken
+
 from tupi.lexer_parser import parse
 from tupi.syntatic.transformer import transformer
 from tupi.semantic.checker import SemanticChecker
@@ -61,63 +63,90 @@ from tupi.visualize import lark_tree_to_svg, ast_to_svg, ast_to_text
 RAIZ = Path(__file__).parent
 EXEMPLOS_DIR = RAIZ / "examples"
 
+# Palavras reservadas da linguagem (ver docs/linguagem.md, seção 1).
+DICIONARIO = [
+    {"Tupi": "tekoha",   "Python": "início do programa", "Significado": "lugar onde se vive"},
+    {"Tupi": "opa",      "Python": "fim do programa",    "Significado": "acabar, terminar"},
+    {"Tupi": "papy",     "Python": "int",                "Significado": "contagem, número"},
+    {"Tupi": "papyvore", "Python": "float",              "Significado": "número fracionário"},
+    {"Tupi": "nee",      "Python": "str",                "Significado": "palavra, fala"},
+    {"Tupi": "anetepa",  "Python": "bool",               "Significado": "\"será verdade?\""},
+    {"Tupi": "anete",    "Python": "True",               "Significado": "verdade"},
+    {"Tupi": "japu",     "Python": "False",              "Significado": "mentira"},
+    {"Tupi": "ramo",     "Python": "if",                 "Significado": "se, quando — condicional"},
+    {"Tupi": "yro",      "Python": "else",               "Significado": "\"se não\" (negação da condição)"},
+    {"Tupi": "aja",      "Python": "while",              "Significado": "durante, enquanto"},
+    {"Tupi": "rupi",     "Python": "for",                "Significado": "por, através de"},
+    {"Tupi": "japo",     "Python": "do…while (japo…aja)", "Significado": "fazer, realizar"},
+    {"Tupi": "monee",    "Python": "input(...)",         "Significado": "ler (\"fazer falar\")"},
+    {"Tupi": "hei",      "Python": "print(...)",         "Significado": "dizer, falar"},
+]
+
 
 # --------------------------------------------------------------------------- #
 # Pipeline de transpilação (reaproveita os módulos existentes do compilador)
 # --------------------------------------------------------------------------- #
 def transpilar(fonte: str) -> dict:
-    """Roda as 4 etapas, capturando o erro na etapa em que ele ocorre."""
+    """Roda as 4 etapas, capturando e classificando o erro na etapa em que
+    ele ocorre: Erro Léxico, Erro Sintático ou Erro Semântico."""
     res = {
         "parse_tree": None,
         "ast": None,
         "symtable": None,
         "codigo": None,
         "erro_etapa": None,   # "sintatica" | "ast" | "semantica" | "codegen"
+        "erro_tipo": None,    # "Erro Léxico" | "Erro Sintático" | "Erro Semântico" | ...
         "erro_msg": None,
+        "erro_linha": None,
+        "erro_coluna": None,
     }
+
+    def _falha(etapa: str, tipo: str, exc: Exception) -> dict:
+        res["erro_etapa"] = etapa
+        res["erro_tipo"] = tipo
+        res["erro_msg"] = str(exc)
+        res["erro_linha"] = getattr(exc, "line", None)
+        res["erro_coluna"] = getattr(exc, "column", None)
+        return res
 
     if not fonte.strip():
         res["erro_etapa"] = "sintatica"
+        res["erro_tipo"] = "Erro Sintático"
         res["erro_msg"] = "Código-fonte vazio."
         return res
 
-    # Etapa 1 — análise léxica + sintática
+    # Etapa 1 — análise léxica + sintática. O Lark distingue os dois casos:
+    # UnexpectedCharacters = caractere que nenhum token reconhece (léxico);
+    # UnexpectedToken = token válido em posição inválida (sintático).
     try:
         res["parse_tree"] = parse(fonte)
+    except UnexpectedCharacters as e:
+        return _falha("sintatica", "Erro Léxico", e)
+    except UnexpectedToken as e:
+        return _falha("sintatica", "Erro Sintático", e)
     except Exception as e:
-        res["erro_etapa"] = "sintatica"
-        res["erro_msg"] = str(e)
-        return res
+        return _falha("sintatica", "Erro Sintático", e)
 
     # Etapa 2 — construção da AST
     try:
         res["ast"] = transformer.transform(res["parse_tree"])
     except Exception as e:
-        res["erro_etapa"] = "ast"
-        res["erro_msg"] = str(e)
-        return res
+        return _falha("ast", "Erro Sintático", e)
 
     # Etapa 3 — análise semântica
     try:
         checker = SemanticChecker()
         checker.check(res["ast"])
         res["symtable"] = checker.symtable
-    except SemanticError as e:
-        res["erro_etapa"] = "semantica"
-        res["erro_msg"] = str(e)
-        return res
     except Exception as e:
-        res["erro_etapa"] = "semantica"
-        res["erro_msg"] = str(e)
-        return res
+        return _falha("semantica", "Erro Semântico", e)
 
     # Etapa 4 — geração de código Python
     try:
         gerador = CodeGenerator(res["symtable"])
         res["codigo"] = gerador.generate(res["ast"])
     except Exception as e:
-        res["erro_etapa"] = "codegen"
-        res["erro_msg"] = str(e)
+        return _falha("codegen", "Erro de Geração de Código", e)
 
     return res
 
@@ -248,6 +277,8 @@ with st.sidebar:
         key="uploader",
         on_change=_carregar_upload,
     )
+    with st.expander("📖 Dicionário (palavras reservadas)"):
+        st.dataframe(DICIONARIO, hide_index=True, width="stretch")
     st.markdown("---")
     st.caption("Edite o código no editor e as etapas são atualizadas automaticamente.")
 
@@ -261,8 +292,15 @@ fonte = st.text_area(
 
 res = transpilar(st.session_state.fonte)
 
-aba_src, aba_parse, aba_ast, aba_sym, aba_py = st.tabs(
-    ["Código-fonte", "Árvore Sintática", "AST", "Tabela de Símbolos", "Python"]
+# Banner de erro classificado (Léxico / Sintático / Semântico) sob o editor.
+if res["erro_etapa"]:
+    local = ""
+    if res["erro_linha"]:
+        local = f" — linha {res['erro_linha']}, coluna {res['erro_coluna']}"
+    st.error(f"**{res['erro_tipo']}**{local}\n\n{res['erro_msg']}")
+
+aba_py, aba_src, aba_parse, aba_ast, aba_sym = st.tabs(
+    ["Python", "Código-fonte", "Árvore Sintática", "AST", "Tabela de Símbolos"]
 )
 
 # --- Código-fonte ---------------------------------------------------------- #
@@ -276,7 +314,7 @@ with aba_parse:
         with st.expander("Ver em texto (indentado)"):
             st.code(res["parse_tree"].pretty(), language="text")
     elif res["erro_etapa"] == "sintatica":
-        st.error(f"Erro sintático:\n\n{res['erro_msg']}")
+        st.error(f"{res['erro_tipo']}:\n\n{res['erro_msg']}")
     else:
         _placeholder()
 
@@ -308,7 +346,7 @@ with aba_sym:
         else:
             st.info("Nenhuma variável declarada.")
     elif res["erro_etapa"] == "semantica":
-        st.error(f"Erro semântico:\n\n{res['erro_msg']}")
+        st.error(f"{res['erro_tipo']}:\n\n{res['erro_msg']}")
     else:
         _placeholder()
 
