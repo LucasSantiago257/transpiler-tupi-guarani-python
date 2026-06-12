@@ -124,15 +124,104 @@ class CodeGenerator:
         self.indent_level -= 2
 
     def visit_CmdFor(self, node: ast.CmdFor):
+        # Contador inteiro canônico vira 'for v in range(...)'; o resto cai
+        # na tradução genérica estilo-C (init; while cond: corpo; passo).
+        range_line = self._try_for_range(node)
+        if range_line is not None:
+            self._add_line(range_line)
+            self.indent_level += 1
+            self.visit(node.bloco)
+            if len(node.bloco.cmds) == 0:
+                self._add_line("pass")
+            self.indent_level -= 1
+        else:
+            self._emit_for_while(node)
+
+    def _emit_for_while(self, node: ast.CmdFor):
         self.visit(node.init)
         cond_str = self.visit(node.cond)
         self._add_line(f"while {cond_str}:")
-        
+
         self.indent_level += 1
         self.visit(node.bloco)
+        if len(node.bloco.cmds) == 0:
+            self._add_line("pass")
         step_rhs = self.visit(node.step.expr)
         self._add_line(f"{node.step.ident} = {step_rhs}")
         self.indent_level -= 1
+
+    def _unwrap(self, node):
+        """Desce por Expr/Term de item único até o fator interno."""
+        while isinstance(node, (ast.Expr, ast.Term)) and len(node.items) == 1:
+            node = node.items[0]
+        return node
+
+    def _try_for_range(self, node: ast.CmdFor):
+        """Devolve a linha 'for v in range(...)' se o laço for um contador
+        inteiro canônico; caso contrário devolve None (→ fallback while)."""
+        v = node.init.ident
+        if node.step.ident != v:
+            return None
+        if not (isinstance(self._unwrap(node.cond.left), ast.FatorId)
+                and self._unwrap(node.cond.left).name == v):
+            return None
+
+        # passo na forma  v ± K  (Expr com exatamente 3 itens)
+        step_expr = node.step.expr
+        if not isinstance(step_expr, ast.Expr) or len(step_expr.items) != 3:
+            return None
+        t0, step_op, t1 = step_expr.items
+        if not (isinstance(self._unwrap(t0), ast.FatorId) and self._unwrap(t0).name == v):
+            return None
+        if not isinstance(step_op, (ast.OpAdd, ast.OpSub)):
+            return None
+
+        # direção coerente com o operador relacional
+        op = node.cond.op
+        ascending = isinstance(op, (ast.OpLt, ast.OpLe))
+        descending = isinstance(op, (ast.OpGt, ast.OpGe))
+        if ascending and not isinstance(step_op, ast.OpAdd):
+            return None
+        if descending and not isinstance(step_op, ast.OpSub):
+            return None
+        if not (ascending or descending):
+            return None  # ==, != não viram range
+
+        # variável do laço inteira e limite não-flutuante
+        if self.symtable.resolve(v).python_type != "int":
+            return None
+        bound_node = self._unwrap(node.cond.right)
+        if isinstance(bound_node, ast.FatorDec):
+            return None
+        if (isinstance(bound_node, ast.FatorId)
+                and self.symtable.resolve(bound_node.name).python_type == "float"):
+            return None
+
+        start = self.visit(node.init.expr)
+        bound = self.visit(node.cond.right)
+
+        # stop a partir do operador (dobra literais nos casos inclusivos)
+        if isinstance(op, ast.OpLt):
+            stop = bound
+        elif isinstance(op, ast.OpLe):
+            stop = str(bound_node.value + 1) if isinstance(bound_node, ast.FatorInt) else f"{bound} + 1"
+        elif isinstance(op, ast.OpGt):
+            stop = bound
+        else:  # OpGe
+            stop = str(bound_node.value - 1) if isinstance(bound_node, ast.FatorInt) else f"{bound} - 1"
+
+        mag = self.visit(t1)
+        mag_node = self._unwrap(t1)
+        if ascending:
+            if isinstance(mag_node, ast.FatorInt) and mag_node.value == 1:
+                args = f"{start}, {stop}"
+            else:
+                args = f"{start}, {stop}, {mag}"
+        else:  # decrescente → passo negativo
+            neg = f"-{mag}" if isinstance(mag_node, (ast.FatorId, ast.FatorInt, ast.FatorDec)) else f"-({mag})"
+            args = f"{start}, {stop}, {neg}"
+
+        return f"for {v} in range({args}):"
 
     def visit_ForInit(self, node: ast.ForInit):
         rhs = self.visit(node.expr)
