@@ -29,28 +29,9 @@ cd transpiler-tupi-guarani-python
 pip install -r requirements.txt
 ```
 
-## Como Usar a CLI
-
-O compilador inclui uma interface de linha de comando (`cli.py`) que processa todas as etapas: Parsing -> AST -> Semântica -> Codegen.
-
-```bash
-# Compilar um código tupi (gera o arquivo .py ao lado do original)
-python -m tupi.cli compile examples/01_ola_mundo.tg
-
-# Compilar para um diretório específico de saída
-python -m tupi.cli compile examples/06_fibonacci.tg -o saida/meu_fibonacci.py
-
-# Compilar e EXECUTAR o código Python gerado imediatamente
-python -m tupi.cli compile examples/07_tpk.tg --run
-
-# Exibir a árvore sintática (parse tree) gerada pelo Lark
-python -m tupi.cli tree examples/01_ola_mundo.tg
-```
-Você também pode escrever seu próprio programa no formato .tg e utilizar o compilador tupi para transformá-lo em python!
-
 ## Visualização Gráfica (Web App)
 
-Além da CLI, há um **visualizador gráfico** (web app em [Streamlit](https://streamlit.io/)) que mostra todas as etapas da transpilação lado a lado — código-fonte, árvore sintática, AST, tabela de símbolos e o Python gerado — e ainda permite **executar** o programa no navegador (com um campo de entrada para os comandos `monee`).
+O projeto inclui um **visualizador gráfico** (web app em [Streamlit](https://streamlit.io/)) que mostra todas as etapas da transpilação lado a lado — código-fonte, árvore sintática, AST, tabela de símbolos e o Python gerado — e ainda permite **executar** o programa no navegador (com um campo de entrada para os comandos `monee`).
 
 ### Modo fácil (recomendado)
 
@@ -78,6 +59,25 @@ Nas abas **Árvore Sintática** e **AST** o grafo é renderizado localmente (**o
 
 Há também a opção *"Ver em texto (indentado)"*, uma visão textual da árvore que sempre funciona.
 
+## Como Usar a CLI
+
+Além do web app, o compilador inclui uma interface de linha de comando (`cli.py`) que processa todas as etapas: Parsing -> AST -> Semântica -> Codegen.
+
+```bash
+# Compilar um código tupi (gera o arquivo .py ao lado do original)
+python -m tupi.cli compile examples/01_ola_mundo.tg
+
+# Compilar para um diretório específico de saída
+python -m tupi.cli compile examples/06_fibonacci.tg -o saida/meu_fibonacci.py
+
+# Compilar e EXECUTAR o código Python gerado imediatamente
+python -m tupi.cli compile examples/07_tpk.tg --run
+
+# Exibir a árvore sintática (parse tree) gerada pelo Lark
+python -m tupi.cli tree examples/01_ola_mundo.tg
+```
+Você também pode escrever seu próprio programa no formato .tg e utilizar o compilador tupi para transformá-lo em python!
+
 ## Exemplo de Programa Fonte
 
 ```
@@ -87,7 +87,7 @@ tekoha
   monee(a).
   hei("Digite B").
   monee(b).
-  ojepe (a < b) {
+  ramo (a < b) {
     c = a + b.
   } yro {
     c = a - b.
