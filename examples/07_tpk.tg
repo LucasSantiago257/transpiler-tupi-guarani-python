@@ -21,7 +21,7 @@ tekoha
     resultado = a * a + 5.0 * a.
 
     hei("f(a) =").
-    ojepe (resultado > limite) {
+    ramo (resultado > limite) {
       hei("TOO LARGE").
     } yro {
       hei(resultado).

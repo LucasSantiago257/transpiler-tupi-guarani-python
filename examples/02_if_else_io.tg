@@ -1,4 +1,4 @@
-# Lê dois inteiros e imprime o maior usando if/else (ojepe/yro).
+# Lê dois inteiros e imprime o maior usando if/else (ramo/yro).
 tekoha
   papy a, b, c.
 
@@ -7,7 +7,7 @@ tekoha
   hei("Digite B").
   monee(b).
 
-  ojepe (a < b) {
+  ramo (a < b) {
     c = b.
   } yro {
     c = a.
