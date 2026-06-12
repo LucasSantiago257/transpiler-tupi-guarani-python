@@ -62,7 +62,7 @@ class SemanticChecker:
     def visit_CmdIf(self, node: ast.CmdIf):
         cond_type = self.visit(node.cond)
         if cond_type != "bool":
-            raise SemanticError(f"Erro Semântico: A condição do 'ojepe' deve ser booleana, mas recebeu '{cond_type}'.")
+            raise SemanticError(f"Erro Semântico: A condição do 'ramo' deve ser booleana, mas recebeu '{cond_type}'.")
         self.visit(node.if_bloco)
         if node.else_bloco:
             self.visit(node.else_bloco)
