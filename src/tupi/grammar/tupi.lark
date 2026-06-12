@@ -30,7 +30,7 @@ cmd_escrita : "hei"   "(" expr ")" "."
 
 cmd_atrib : IDENT _ASSIGN expr "."
 
-cmd_if      : "ojepe" "(" cond ")" "{" bloco "}" ("yro" "{" bloco "}")?
+cmd_if      : "ramo" "(" cond ")" "{" bloco "}" ("yro" "{" bloco "}")?
 cmd_while   : "aja"   "(" cond ")" "{" bloco "}"
 cmd_dowhile : "japo"  "{" bloco "}" "aja" "(" cond ")" "."
 cmd_for     : "rupi"  "(" for_init cond "." for_step ")" "{" bloco "}"
