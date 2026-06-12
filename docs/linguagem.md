@@ -11,17 +11,17 @@ Linguagem de programação fonte deste transpilador. Tem vocabulário inspirado 
 | `tekoha` | tekoha | lugar onde se vive | Início do script principal |
 | `opa` | opa | acabar, terminar | Fim do script principal |
 | `papy` | papy | contagem, número | `int` |
-| `papyvore` | papy vore | número fracionário | `float` |
+| `papyvore` | papy + vore | número + parte/fração → número fracionário | `float` |
 | `nee` | ñe'ẽ | palavra, fala | `str` |
 | `anetepa` | añetepa | "será verdade?" | `bool` |
 | `anete` | añete | verdade | `True` |
 | `japu` | japu | mentira | `False` |
-| `ojepe` | ojepe | conjunção condicional | `if` |
-| `yro` | ỹrõ | senão | `else` |
-| `aja` | aja | enquanto | `while` |
-| `rupi` | rupi | por, através de | `while` / `for` |
+| `ramo` | ramo (rõ) | se, quando (condicional) | `if` |
+| `yro` | ỹrõ | ỹ (não) + rõ (se) = "se não" | `else` |
+| `aja` | aja | durante, enquanto | `while` |
+| `rupi` | rupi | por, através de | `for` |
 | `japo` | japo | fazer, realizar | `while True` com quebra |
-| `monee` | moñe'ẽ | ler, decifrar | `input(...)` |
+| `monee` | moñe'ẽ | ler (mo + ñe'ẽ = "fazer falar") | `input(...)` |
 | `hei` | he'i | dizer, falar | `print(...)` |
 
 ### Operadores e pontuação
@@ -35,6 +35,11 @@ Linguagem de programação fonte deste transpilador. Tem vocabulário inspirado 
 
 ### Comentários
 - De linha: `# até o fim da linha`
+
+> As grafias autênticas e os significados desta seção foram revisados com base
+> nas referências em [`fontes_dicionario.md`](fontes_dicionario.md) (dicionário
+> Tupi de Gonçalves Dias, Wikibooks de gramática Guarani e o *Tesoro de la
+> Lengua Guaraní* de Montoya).
 
 ---
 
@@ -95,7 +100,7 @@ Imprime o valor da expressão. Para texto literal, basta uma string entre aspas 
 
 ### 4.4 Condicional
 ```
-ojepe ( Cond ) {
+ramo ( Cond ) {
   Cmd+
 } yro {
   Cmd+
@@ -124,6 +129,19 @@ rupi ( Id = Expr . Cond . Id = Expr ) {
 }
 ```
 Forma `(init . cond . passo)`. Note que `init` e `cond` terminam com `.`, mas o `passo` não — ele já está dentro dos parênteses.
+
+**Geração de código.** Quando o laço é um contador inteiro canônico — a mesma
+variável em `init`, `cond` e `passo`, com `passo` na forma `i = i + k`
+(ou `i = i - k`) e limite inteiro — o transpilador emite o idiomático
+`for i in range(start, stop, step)`:
+
+- `i < b` → `range(a, b)`;  `i <= b` → `range(a, b+1)` (literais são dobrados:
+  `i <= 3` → `range(a, 4)`; expressões viram `range(a, b + 1)`).
+- `i > b` / `i >= b` → passo negativo, ex.: `range(a, b, -1)` / `range(a, b-1, -1)`.
+- passo `+1` crescente omite o terceiro argumento de `range`.
+
+Laços fora desse formato (passo como `i = i * 2`, limite `float`, variáveis que
+não coincidem, etc.) caem na tradução genérica `init; while cond: … ; passo`.
 
 ---
 
@@ -193,10 +211,10 @@ Regras de promoção:
 | `monee(x).` (x float) | `x = float(input())` |
 | `monee(x).` (x str) | `x = input()` |
 | `monee(x).` (x bool) | `x = input().strip().lower() in ("true","anete","1")` |
-| `ojepe (c) { … } yro { … }` | `if c: …` / `else: …` |
+| `ramo (c) { … } yro { … }` | `if c: …` / `else: …` |
 | `aja (c) { … }` | `while c: …` |
 | `japo { … } aja (c).` | `while True: …; if not c: break` |
-| `rupi (i = a . i < b . i = i + p) { … }` | `i = a` / `while i < b: …; i = i + p` |
+| `rupi (i = a . i < b . i = i + p) { … }` | `for i in range(a, b, p): …` (contador canônico; senão `while`) |
 | `anete` / `japu` | `True` / `False` |
 
 ---
@@ -216,7 +234,7 @@ Cmd         → CmdLeitura | CmdEscrita | CmdAtrib | CmdIf
 CmdLeitura  → "monee" "(" IDENT ")" "."
 CmdEscrita  → "hei" "(" Expr ")" "."
 CmdAtrib    → IDENT "=" Expr "."
-CmdIf       → "ojepe" "(" Cond ")" "{" Cmd+ "}" ("yro" "{" Cmd+ "}")?
+CmdIf       → "ramo" "(" Cond ")" "{" Cmd+ "}" ("yro" "{" Cmd+ "}")?
 CmdWhile    → "aja"   "(" Cond ")" "{" Cmd+ "}"
 CmdDoWhile  → "japo"  "{" Cmd+ "}" "aja" "(" Cond ")" "."
 CmdFor      → "rupi"  "(" ForInit Cond "." ForStep ")" "{" Cmd+ "}"
@@ -250,7 +268,7 @@ tekoha
   hei("Digite B").
   monee(b).
 
-  ojepe (a < b) {
+  ramo (a < b) {
     c = a + b.
   } yro {
     c = a - b.
