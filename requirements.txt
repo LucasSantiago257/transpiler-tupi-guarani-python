@@ -4,3 +4,7 @@ click>=8.1.7
 
 # Dependências do visualizador gráfico (web app)
 streamlit>=1.30
+
+# Instala o próprio pacote `tupi` (de src/) em modo editável,
+# habilitando a CLI: `python -m tupi.cli ...` e o comando `tupi`.
+-e .

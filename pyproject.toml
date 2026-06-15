@@ -9,11 +9,11 @@ description = "Transpilador de uma linguagem com vocabulário Tupi-Guarani para 
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    {name = "Lucas Carvalho Santiago",
-    "João Manuel da Silva Cunha",
-    "Bruno Sales Fiaes Carneiro",
-    "Bruno de Menezes Sales",
-    "Guilherme Costa dos Santos"}
+    {name = "Lucas Carvalho Santiago"},
+    {name = "João Manuel da Silva Cunha"},
+    {name = "Bruno Sales Fiaes Carneiro"},
+    {name = "Bruno de Menezes Sales"},
+    {name = "Guilherme Costa dos Santos"},
 ]
 license = { text = "MIT" }
 dependencies = [
