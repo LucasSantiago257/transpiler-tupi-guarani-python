@@ -1,9 +1,20 @@
+# Etapa 2 do pipeline: nós da AST (dataclasses), montados a partir da parse
+# tree pelo transformer (syntatic/transformer.py via ast_utils.create_transformer).
+#
+# Convenção obrigatória: o nome de cada classe abaixo deve corresponder, em
+# CamelCase, ao nome de uma regra ou alias ("-> nome") da gramática em
+# grammar/tupi.lark (snake_case -> CamelCase). É essa correspondência de
+# nomes que conecta os dois arquivos — não há registro explícito em lugar
+# nenhum. Os campos do dataclass são preenchidos posicionalmente, na ordem
+# dos filhos daquele nó na gramática.
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from lark import ast_utils
 from lark.tree import Meta
 
+# _Ast é a classe-base exigida pelo ast_utils do Lark: marca quais classes
+# deste módulo são candidatas a nó de AST (as demais são ignoradas).
 class _Ast(ast_utils.Ast): pass
 
 class _Tipo(_Ast): pass
@@ -19,6 +30,11 @@ class TipoBool(_Tipo): pass
 # Base genérica para todos os tipos de expressões e fatores
 class ExprBase(_Ast): pass
 
+# ast_utils.AsList diz ao transformer para empacotar TODOS os filhos do nó
+# numa única lista (em vez de campos posicionais fixos), pois um Expr/Term
+# pode ter um número variável de operandos — ex.: "a + b - c" produz items =
+# [a, OpAdd, b, OpSub, c]. checker.py e emitter.py percorrem essa lista de
+# 2 em 2 (operando, operador, operando, ...).
 @dataclass
 class Expr(ExprBase, ast_utils.AsList):
     items: List[Union['_Ast']]

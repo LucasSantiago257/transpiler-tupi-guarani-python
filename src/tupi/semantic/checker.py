@@ -1,3 +1,7 @@
+# Etapa 3 do pipeline: análise semântica. Percorre a AST (Visitor: ver
+# visit()/generic_visit() abaixo) populando a SymbolTable e validando tipos;
+# qualquer violação levanta SemanticError, interrompendo a compilação antes
+# da etapa 4 gerar código.
 from tupi.semantic.symbol_table import SymbolTable, SemanticError
 import tupi.syntatic.ast_nodes as ast
 
@@ -6,16 +10,24 @@ class SemanticChecker:
         self.symtable = SymbolTable()
 
     def check(self, tree):
+        # A gramática tem "start: program", mas start não tem dataclass
+        # correspondente em ast_nodes — chega aqui como Tree('start', [...])
+        # em vez de um nó _Ast, então desembrulha-se manualmente.
         if hasattr(tree, 'data') and getattr(tree, 'data') == 'start':
             tree = tree.children[0]
         self.visit(tree)
 
+    # Despacho por nome de classe: visit_CmdIf, visit_FatorId, etc. Manter
+    # esse nome (visit_<ClassName>) é o que liga cada dataclass de ast_nodes
+    # ao método que sabe processá-la.
     def visit(self, node: ast._Ast):
         method_name = f'visit_{node.__class__.__name__}'
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
     def generic_visit(self, node: ast._Ast):
+        # Falha alto e explicitamente: um nó sem visit_ correspondente é bug
+        # de gramática/AST (novo construto sem visitor), não algo a ignorar.
         raise Exception(f"No visit_{node.__class__.__name__} method")
 
     def visit_Program(self, node: ast.Program):
@@ -48,6 +60,8 @@ class SemanticChecker:
         symbol = self.symtable.resolve(node.ident)
         expr_type = self.visit(node.expr)
 
+        # Única promoção implícita permitida na linguagem: int cabe em
+        # float, mas não o contrário (ver docs/linguagem.md, seção 6.2).
         if symbol.python_type == "float" and expr_type == "int":
             pass
         elif symbol.python_type != expr_type:
@@ -111,6 +125,10 @@ class SemanticChecker:
 
         return "bool"
 
+    # Expr/Term guardam uma lista plana "items" (ver AsList em ast_nodes.py):
+    # [operando, operador, operando, operador, ...]. O laço avalia da
+    # esquerda para a direita, acumulando o tipo resultante a cada par
+    # (operador, próximo operando) — por isso o passo de 2 em 2.
     def visit_Expr(self, node: ast.Expr) -> str:
         items = node.items
         current_type = self.visit(items[0])
@@ -130,15 +148,18 @@ class SemanticChecker:
         return current_type
 
     def _check_arithmetic(self, left: str, right: str, op: ast._Ast) -> str:
+        # Strings só aceitam '+' (concatenação); nenhuma outra combinação
+        # com 'str' é válida.
         if left == 'str' and right == 'str':
             if isinstance(op, ast.OpAdd):
                 return 'str'
             raise SemanticError("Erro Semântico: Apenas soma (+) é permitida para strings.")
-        
+
         if left in ('str', 'bool') or right in ('str', 'bool'):
             raise SemanticError(f"Erro Semântico: Operação aritmética inválida entre '{left}' e '{right}'.")
 
-
+        # '/' sempre promove a float se qualquer operando for float; as
+        # demais operações (+, -, *) seguem a mesma regra de promoção abaixo.
         if isinstance(op, ast.OpDiv):
             if left == 'float' or right == 'float':
                 return 'float'

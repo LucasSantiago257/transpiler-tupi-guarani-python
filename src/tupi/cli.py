@@ -1,3 +1,6 @@
+# Ponto de entrada da CLI. Orquestra as 4 etapas do pipeline (lexer+parser
+# -> AST -> semântica -> codegen) nos comandos abaixo; não implementa
+# nenhuma etapa por conta própria, só importa e encadeia os módulos.
 import os
 import sys
 import subprocess
@@ -81,6 +84,11 @@ def tree(arquivo):
 def web():
     """Abre o visualizador grafico (web app Streamlit)."""
 
+    # app.py vive na raiz do projeto, fora de src/tupi. parents[2] alcança
+    # essa raiz quando o pacote está instalado a partir do código-fonte
+    # (pip install -e .); o fallback para cwd cobre o caso de uma instalação
+    # empacotada, em que essa relação de diretórios não existe e espera-se
+    # que o comando seja rodado a partir da raiz do projeto.
     app_path = Path(__file__).resolve().parents[2] / "app.py"
     if not app_path.exists():
         app_path = Path.cwd() / "app.py"

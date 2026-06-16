@@ -1,10 +1,15 @@
+# Etapa 4 do pipeline: geração de código. Percorre a AST com o mesmo padrão
+# de Visitor do checker (despacho por nome de classe) e emite Python como
+# string. Usa a SymbolTable construída na etapa 3 (não revalida tipos —
+# isso já foi garantido pelo checker) para decidir conversões concretas,
+# como qual cast usar em cada leitura "monee".
 import tupi.syntatic.ast_nodes as ast
 from tupi.semantic.symbol_table import SymbolTable
 
 class CodeGenerator:
     def __init__(self, symtable: SymbolTable):
         self.symtable = symtable
-        self.indent_level = 1
+        self.indent_level = 1  # corpo de main() começa indentado em 1 nível
         self.code = []
 
     def _add_line(self, line: str):
@@ -12,21 +17,26 @@ class CodeGenerator:
         self.code.append(indent + line)
 
     def generate(self, tree) -> str:
+        # Mesmo desembrulho de Tree('start', [...]) feito em checker.py —
+        # 'start' não tem dataclass correspondente em ast_nodes.
         if hasattr(tree, 'data') and getattr(tree, 'data') == 'start':
             tree = tree.children[0]
-            
+
         self.code = [
             "def main():"
         ]
         self.visit(tree)
         if len(self.code) == 1:
             self._add_line("pass")
-            
+
         self.code.append("")
         self.code.append("if __name__ == '__main__':")
         self.code.append("    main()")
         return "\n".join(self.code)
 
+    # Despacho por nome de classe (visit_CmdIf, visit_FatorId, ...), igual
+    # ao checker — mas aqui cada visit_* devolve um fragmento de código
+    # Python (string) em vez de um tipo.
     def visit(self, node: ast._Ast) -> str:
         method_name = f'visit_{node.__class__.__name__}'
         visitor = getattr(self, method_name, self.generic_visit)
@@ -67,12 +77,16 @@ class CodeGenerator:
 
     def visit_CmdLeitura(self, node: ast.CmdLeitura):
         symbol = self.symtable.resolve(node.ident)
-        
+
         if symbol.python_type == "int":
             self._add_line(f"{node.ident} = int(input())")
         elif symbol.python_type == "float":
             self._add_line(f"{node.ident} = float(input())")
         elif symbol.python_type == "bool":
+            # Aceita tanto o literal Python ('true') quanto a palavra Tupi
+            # ('anete') ou '1', já que quem digita na entrada é o usuário
+            # final do programa gerado, não necessariamente alguém que
+            # conhece Python.
             self._add_line(f"{node.ident} = input().strip().lower() in ('true', 'anete', '1')")
         else: # str
             self._add_line(f"{node.ident} = input()")
@@ -110,6 +124,9 @@ class CodeGenerator:
         self.indent_level -= 1
 
     def visit_CmdDowhile(self, node: ast.CmdDowhile):
+        # Python não tem do-while nativo: simula-se com "while True" e um
+        # "break" condicional ao final do corpo, executando o bloco pelo
+        # menos uma vez antes de testar a condição.
         self._add_line("while True:")
         
         self.indent_level += 1
@@ -233,6 +250,10 @@ class CodeGenerator:
         op = self.visit(node.op)
         return f"{left} {op} {right}"
 
+    # Mesma lista plana [operando, operador, operando, ...] usada em
+    # checker.py — aqui só remonta-se a expressão como texto Python, na
+    # mesma ordem; a precedência já foi resolvida pela estrutura aninhada
+    # da gramática (expr -> term -> fator), não precisa ser recalculada.
     def visit_Expr(self, node: ast.Expr) -> str:
         items = node.items
         parts = [self.visit(items[0])]

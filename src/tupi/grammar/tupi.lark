@@ -1,4 +1,9 @@
-// Uma visão geral melhor da linguagem se encontra no docs/linguagem.md
+// Etapa 1 do pipeline: LEXER + PARSER.
+// Esta gramática Lark define, num só arquivo, os tokens (terminais em
+// MAIÚSCULAS no fim do arquivo) e as regras LALR que os combinam. É
+// carregada por lexer_parser.py, que constrói o Lark e devolve a parse tree.
+//
+// Uma visão geral melhor da linguagem se encontra no docs/linguagem.md.
 
 start: program
 
@@ -65,9 +70,12 @@ fator  : NUMERO_DEC       -> fator_dec
        | "(" expr ")"     -> fator_par
 
 // ---------- Tokens ----------
+// Lookahead negativo para não confundir "=" de atribuição com o início de "==".
 _ASSIGN     : /=(?!=)/
 NUMERO_DEC : /[0-9]+\.[0-9]+/
 NUMERO_INT : /[0-9]+/
+// Faixa À-ÿ cobre as letras acentuadas usadas no vocabulário Tupi-Guarani
+// (ã, õ, ç, ẽ, etc.), permitindo identificadores como "raça" ou "razão".
 IDENT      : /[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*/
 
 %import common.ESCAPED_STRING
