@@ -105,5 +105,3 @@ examples/
 docs/
   linguagem.md           Especificação completa da linguagem Tupi
 ```
-
-```
